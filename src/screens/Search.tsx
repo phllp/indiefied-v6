@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabaseService } from '../services/supabase';
 import { TrackWithDetails } from '../types/database';
 
+import palette from '@/styles/colors';
+
 export default function SearchScreen() {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([]);
   const [filteredTracks, setFilteredTracks] = useState<TrackWithDetails[]>([]);
@@ -39,15 +41,15 @@ export default function SearchScreen() {
       setFilteredTracks(tracks);
       return;
     }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = tracks.filter(
-      (track) =>
-        track.title.toLowerCase().includes(query) ||
-        track.artists?.name.toLowerCase().includes(query) ||
-        track.albums?.title.toLowerCase().includes(query)
+    const q = searchQuery.toLowerCase();
+    setFilteredTracks(
+      tracks.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.artists?.name.toLowerCase().includes(q) ||
+          t.albums?.title.toLowerCase().includes(q)
+      )
     );
-    setFilteredTracks(filtered);
   };
 
   const formatDuration = (seconds: number | null) => {
@@ -59,90 +61,89 @@ export default function SearchScreen() {
 
   const renderTrackItem = ({ item }: { item: TrackWithDetails }) => (
     <TouchableOpacity
-      className="flex-row items-center border-b border-gray-200 bg-white p-4 active:bg-gray-50"
+      className="border-border active:bg-primary-soft/10 flex-row items-center border-b px-4 py-3"
       onPress={() => console.log('Play:', item.title)}>
-      {/* Placeholder ou capa do álbum */}
-      <View className="mr-3 h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+      {/* Capa / placeholder */}
+      <View className="bg-surface border-border mr-3 h-12 w-12 items-center justify-center rounded-lg border">
         {item.albums?.cover_url ? (
-          <Text className="text-xs">🎵</Text>
+          // Coloca tua <Image> real aqui quando tiver a URL
+          <Text className="text-muted text-xs">🎵</Text>
         ) : (
-          <Ionicons name="musical-note" size={24} color="#3b82f6" />
+          <Ionicons name="musical-note" size={20} color={palette.muted} />
         )}
       </View>
 
-      {/* Informações da música */}
+      {/* Info */}
       <View className="flex-1">
-        <Text className="text-base font-semibold text-gray-800" numberOfLines={1}>
+        <Text className="text-content text-base font-semibold" numberOfLines={1}>
           {item.title}
         </Text>
-        <Text className="text-sm text-gray-600" numberOfLines={1}>
+        <Text className="text-muted text-sm" numberOfLines={1}>
           {item.artists?.name || 'Artista desconhecido'}
-          {item.albums?.title && ` • ${item.albums.title}`}
         </Text>
-        {item.local_key && (
-          <Text className="mt-0.5 text-xs text-gray-400" numberOfLines={1}>
-            📁 {item.local_key}
-          </Text>
-        )}
       </View>
 
       {/* Duração */}
       <View className="ml-2 items-end">
-        <Text className="text-sm text-gray-500">{formatDuration(item.duration_seconds)}</Text>
+        <Text className="text-muted text-sm">{formatDuration(item.duration_seconds)}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  //   if (loading) {
-  //     return (
-  //       <View className="flex-1 items-center justify-center bg-white">
-  //         <ActivityIndicator size="large" color="#3b82f6" />
-  //         <Text className="mt-4 text-gray-600">Carregando músicas...</Text>
-  //       </View>
-  //     );
-  //   }
+  if (loading) {
+    return (
+      <View className="bg-bg flex-1 items-center justify-center">
+        <ActivityIndicator size="large" color={palette.primary} />
+        <Text className="text-muted mt-4">Carregando músicas…</Text>
+      </View>
+    );
+  }
 
-  //   if (error) {
-  //     return (
-  //       <View className="flex-1 items-center justify-center bg-white p-4">
-  //         <Ionicons name="alert-circle" size={64} color="#ef4444" />
-  //         <Text className="mt-4 text-xl font-bold text-gray-800">{error}</Text>
-  //         <TouchableOpacity className="mt-4 rounded-lg bg-blue-500 px-6 py-3" onPress={loadTracks}>
-  //           <Text className="font-semibold text-white">Tentar novamente</Text>
-  //         </TouchableOpacity>
-  //       </View>
-  //     );
-  //   }
+  if (error) {
+    return (
+      <View className="bg-bg flex-1 items-center justify-center p-4">
+        <Ionicons name="alert-circle" size={64} color={palette.danger} />
+        <Text className="text-content mt-4 text-xl font-bold">{error}</Text>
+        <TouchableOpacity
+          className="bg-primary mt-4 rounded-lg px-6 py-3 active:opacity-90"
+          onPress={loadTracks}>
+          <Text className="font-semibold text-black">Tentar novamente</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <View className="flex-1">
-      {/* Barra de busca */}
-      <View className="border-b border-red-500 bg-red-400 p-4">
-        <View className="flex-row items-center rounded-lg bg-gray-500 px-3 py-2">
-          <Ionicons name="search" size={20} color="#9ca3af" />
+    <View className="bg-bg flex-1">
+      {/* Search bar */}
+      <View className="p-4">
+        <View className="bg-surface border-border flex-row items-center rounded-lg border px-3 py-2">
+          <Ionicons name="search" size={20} color={palette.muted} />
           <TextInput
-            className="ml-2 flex-1 text-base text-gray-800"
+            className="text-content ml-2 flex-1"
             placeholder="Buscar músicas, artistas ou álbuns..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={palette.muted}
+            selectionColor={palette.primary}
+            cursorColor={palette.primary as any}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#9ca3af" />
+              <Ionicons name="close-circle" size={20} color={palette.muted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Lista de músicas */}
+      {/* Lista */}
       {filteredTracks.length === 0 ? (
-        <View className="flex-1 items-center justify-center p-4">
-          <Ionicons name="musical-notes-outline" size={64} color="#d1d5db" />
-          <Text className="mt-4 text-xl font-bold text-gray-800">
+        <View className="flex-1 items-center justify-center p-6">
+          <Ionicons name="musical-notes-outline" size={64} color={palette.muted} />
+          <Text className="text-content mt-4 text-xl font-bold">
             {searchQuery ? 'Nenhuma música encontrada' : 'Nenhuma música cadastrada'}
           </Text>
-          <Text className="mt-2 text-center text-gray-600">
+          <Text className="text-muted mt-2 text-center">
             {searchQuery
               ? 'Tente buscar por outro termo'
               : 'Adicione suas primeiras músicas para começar'}
