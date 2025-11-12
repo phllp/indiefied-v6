@@ -5,6 +5,7 @@ import { supabaseService } from '../services/supabase';
 import { TrackWithDetails } from '../types/database';
 
 import palette from '@/styles/colors';
+import ListTrackItem from '@/components/ListTrackItem';
 
 export default function SearchScreen() {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([]);
@@ -52,43 +53,9 @@ export default function SearchScreen() {
     );
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const renderTrackItem = ({ item }: { item: TrackWithDetails }) => {
+    return <ListTrackItem item={item} />;
   };
-
-  const renderTrackItem = ({ item }: { item: TrackWithDetails }) => (
-    <TouchableOpacity
-      className="border-border active:bg-primary-soft/10 flex-row items-center border-b px-4 py-3"
-      onPress={() => console.log('Play:', item.title)}>
-      {/* Capa / placeholder */}
-      <View className="bg-surface border-border mr-3 h-12 w-12 items-center justify-center rounded-lg border">
-        {item.albums?.cover_url ? (
-          // Coloca tua <Image> real aqui quando tiver a URL
-          <Text className="text-muted text-xs">🎵</Text>
-        ) : (
-          <Ionicons name="musical-note" size={20} color={palette.muted} />
-        )}
-      </View>
-
-      {/* Info */}
-      <View className="flex-1">
-        <Text className="text-content text-base font-semibold" numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text className="text-muted text-sm" numberOfLines={1}>
-          {item.artists?.name || 'Artista desconhecido'}
-        </Text>
-      </View>
-
-      {/* Duração */}
-      <View className="ml-2 items-end">
-        <Text className="text-muted text-sm">{formatDuration(item.duration_seconds)}</Text>
-      </View>
-    </TouchableOpacity>
-  );
 
   if (loading) {
     return (

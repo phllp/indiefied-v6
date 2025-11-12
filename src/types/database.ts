@@ -22,6 +22,6 @@ export interface Track {
 }
 
 export interface TrackWithDetails extends Track {
-  artists?: Artist;
-  albums?: Album;
+  artists: Artist;
+  albums: Album;
 }
