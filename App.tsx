@@ -1,43 +1,62 @@
 import './global.css';
 
-import { StatusBar } from 'expo-status-bar';
-import Ionicons from '@expo/vector-icons/Ionicons';
-
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
-import HomeScreen from '@/screens/Home';
-import SearchScreen from '@/screens/Search';
+import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import palette from 'src/styles/colors';
 import PlaylistsScreen from '@/screens/Playlists';
+import SearchScreen from '@/screens/Search';
+import HomeScreen from '@/screens/Home';
 
 const Tab = createBottomTabNavigator();
 
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: palette.bg,
+    card: palette.surface,
+    text: palette.content,
+    border: palette.border,
+    primary: palette.primary,
+  },
+};
+
 export default function App() {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         screenOptions={{
-          tabBarActiveTintColor: '#3b82f6', // azul
-          tabBarInactiveTintColor: '#9ca3af', // cinza
+          // ícones/labels da tab
+          tabBarActiveTintColor: palette.primary, // amarelo nos ativos
+          tabBarInactiveTintColor: palette.muted, // cinza nos inativos
+
+          // barra inferior (surface)
           tabBarStyle: {
-            backgroundColor: '#ffffff',
+            backgroundColor: palette.surface,
             borderTopWidth: 1,
-            borderTopColor: '#e5e7eb',
+            borderTopColor: palette.border,
             height: 60,
-            paddingBottom: 8,
-            paddingTop: 8,
           },
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',
           },
+          tabBarItemStyle: {},
+          // leve realce no item ativo (amarelo suave translúcido)
+          tabBarActiveBackgroundColor: '#FFF17622',
+
+          // header: fundo dark, título claro; amarelo nos botões/ações
           headerStyle: {
-            backgroundColor: '#3b82f6',
+            backgroundColor: palette.bg,
           },
-          headerTintColor: '#ffffff',
           headerTitleStyle: {
+            color: palette.content,
             fontWeight: 'bold',
           },
+          headerTintColor: palette.primary, // ícone de back / action em amarelo
+          headerShadowVisible: false,
         }}>
         <Tab.Screen
           name="Home"
@@ -64,6 +83,7 @@ export default function App() {
           }}
         />
       </Tab.Navigator>
+
       <StatusBar style="light" />
     </NavigationContainer>
   );
