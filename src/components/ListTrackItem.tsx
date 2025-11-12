@@ -5,7 +5,13 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import palette from '@/styles/colors';
 
-export default function ListTrackItem({ item }: { item: TrackWithDetails }) {
+export default function ListTrackItem({
+  item,
+  onPressed,
+}: {
+  item: TrackWithDetails;
+  onPressed: () => void;
+}) {
   const coverUri = useAlbumCover('album_covers', item.artists.id, item.albums.cover_url!);
 
   const formatDuration = (seconds: number | null) => {
@@ -18,7 +24,7 @@ export default function ListTrackItem({ item }: { item: TrackWithDetails }) {
   return (
     <TouchableOpacity
       className="border-border active:bg-primary-soft/10 flex-row items-center border-b px-4 py-3"
-      onPress={() => console.log('Play:', item.title)}>
+      onPress={onPressed}>
       <View className="bg-surface border-border mr-3 h-12 w-12 overflow-hidden rounded-lg border">
         {coverUri ? (
           <Image

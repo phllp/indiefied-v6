@@ -30,3 +30,10 @@ export function getAlbumCoverUrl(params: {
 
   return data.publicUrl;
 }
+
+// retorna https://<project>.supabase.co/storage/v1/object/public/...
+export function getTrackPublicUrl(bucket: string, albumId: string | number, remoteUrl: string) {
+  const path = `${albumId}/${remoteUrl}`.replace(/^\/+/, '');
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}

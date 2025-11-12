@@ -8,8 +8,16 @@ import palette from 'src/styles/colors';
 import PlaylistsScreen from '@/screens/Playlists';
 import SearchScreen from '@/screens/Search';
 import HomeScreen from '@/screens/Home';
-
-const Tab = createBottomTabNavigator();
+import { PlayerProvider, usePlayer } from '@/context/PlayerProvider';
+import { FullPlayerOverlay } from '@/components/FullPlayerOverlay';
+import { MiniPlayer } from '@/components/MiniPlayer';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import MainTabs from '@/navigation/MainTabs';
 
 const navTheme = {
   ...DefaultTheme,
@@ -23,68 +31,38 @@ const navTheme = {
   },
 };
 
+function Overlays() {
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 60;
+
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 30,
+        elevation: 30,
+      }}>
+      <FullPlayerOverlay bottomOffset={TAB_BAR_HEIGHT} />
+      <MiniPlayer bottomOffset={TAB_BAR_HEIGHT + insets.bottom} />
+    </View>
+  );
+}
+
 export default function App() {
   return (
-    <NavigationContainer theme={navTheme}>
-      <Tab.Navigator
-        screenOptions={{
-          // ícones/labels da tab
-          tabBarActiveTintColor: palette.primary, // amarelo nos ativos
-          tabBarInactiveTintColor: palette.muted, // cinza nos inativos
-
-          // barra inferior (surface)
-          tabBarStyle: {
-            backgroundColor: palette.surface,
-            borderTopWidth: 1,
-            borderTopColor: palette.border,
-            height: 60,
-          },
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-          },
-          tabBarItemStyle: {},
-          // leve realce no item ativo (amarelo suave translúcido)
-          tabBarActiveBackgroundColor: '#FFF17622',
-
-          // header: fundo dark, título claro; amarelo nos botões/ações
-          headerStyle: {
-            backgroundColor: palette.bg,
-          },
-          headerTitleStyle: {
-            color: palette.content,
-            fontWeight: 'bold',
-          },
-          headerTintColor: palette.primary, // ícone de back / action em amarelo
-          headerShadowVisible: false,
-        }}>
-        <Tab.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{
-            tabBarLabel: 'Início',
-            tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-          }}
-        />
-        <Tab.Screen
-          name="Search"
-          component={SearchScreen}
-          options={{
-            tabBarLabel: 'Buscar',
-            tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
-          }}
-        />
-        <Tab.Screen
-          name="Playlists"
-          component={PlaylistsScreen}
-          options={{
-            tabBarLabel: 'Playlists',
-            tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} />,
-          }}
-        />
-      </Tab.Navigator>
-
-      <StatusBar style="light" />
-    </NavigationContainer>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <PlayerProvider>
+        <NavigationContainer theme={navTheme}>
+          <MainTabs />
+          <Overlays />
+          <StatusBar style="light" />
+        </NavigationContainer>
+      </PlayerProvider>
+    </SafeAreaProvider>
   );
 }

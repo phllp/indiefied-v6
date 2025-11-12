@@ -6,6 +6,8 @@ import { TrackWithDetails } from '../types/database';
 
 import palette from '@/styles/colors';
 import ListTrackItem from '@/components/ListTrackItem';
+import { usePlayer } from '@/context/PlayerProvider';
+import { getAlbumCoverUrl, getTrackPublicUrl } from '@/services/supabase-storage';
 
 export default function SearchScreen() {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([]);
@@ -13,6 +15,8 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { playTrack } = usePlayer();
 
   useEffect(() => {
     loadTracks();
@@ -54,7 +58,26 @@ export default function SearchScreen() {
   };
 
   const renderTrackItem = ({ item }: { item: TrackWithDetails }) => {
-    return <ListTrackItem item={item} />;
+    return (
+      <ListTrackItem
+        item={item}
+        onPressed={() => {
+          const audioUrl = getTrackPublicUrl('tracks', item.albums!.id, item.remote_url!);
+          const albumCoverUrl = getAlbumCoverUrl({
+            bucket: 'album_covers',
+            artistUuid: item.artist_id!,
+            albumUrl: item.albums!.cover_url!,
+          });
+          playTrack({
+            id: item.id,
+            title: item.title,
+            artist: item.artists?.name,
+            coverUrl: albumCoverUrl,
+            audioUrl: audioUrl,
+          });
+        }}
+      />
+    );
   };
 
   if (loading) {
