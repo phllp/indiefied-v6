@@ -25,3 +25,11 @@ export interface TrackWithDetails extends Track {
   artists: Artist;
   albums: Album;
 }
+
+export type Playlist = {
+  id: string;
+  user_id: string;
+  name: string;
+  cover_url: string | null;
+  created_at: string;
+};
