@@ -18,18 +18,22 @@ interface Props {
 }
 
 export function PlaylistDetailOverlay({ bottomOffset }: Props) {
-  const { playlist, isOpen, close } = useOverlay();
+  const { state, isOpen, close } = useOverlay();
+
+  const playlist = state?.kind === 'playlist' ? state.playlist : null;
+
   const [items, setItems] = useState<PlaylistTrackItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { playTrack } = usePlayer();
-
   const [pendingDelete, setPendingDelete] = useState<PlaylistTrackItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const { playTrack } = usePlayer();
+
   useEffect(() => {
     if (!isOpen || !playlist) return;
+
     (async () => {
       try {
         setLoading(true);
@@ -47,6 +51,13 @@ export function PlaylistDetailOverlay({ bottomOffset }: Props) {
 
   if (!isOpen || !playlist) return null;
 
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return '--:--';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !playlist) return;
     setDeleting(true);
@@ -56,7 +67,6 @@ export function PlaylistDetailOverlay({ bottomOffset }: Props) {
         trackId: pendingDelete.track_id,
       });
 
-      // remove da lista local
       setItems((prev) => prev.filter((it) => it.track_id !== pendingDelete.track_id));
       setPendingDelete(null);
     } catch (e) {
@@ -72,64 +82,63 @@ export function PlaylistDetailOverlay({ bottomOffset }: Props) {
     if (!track) return null;
 
     const audioUrl = getTrackPublicUrl('tracks', track.albums!.id, track.remote_url!);
-    const coverUrl = track.albums?.cover_url ?? undefined;
+    const coverUrl = track.albums?.cover_url ?? null;
 
-    const formatDuration = (seconds: number | null) => {
-      if (!seconds) return '--:--';
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${m}:${s.toString().padStart(2, '0')}`;
-    };
     return (
-      <TouchableOpacity
-        className="flex-row items-center gap-3 py-3 active:opacity-90"
-        onPress={() =>
-          playTrack({
-            id: track.id,
-            title: track.title,
-            artist: track.artists?.name,
-            coverUrl,
-            audioUrl,
-          })
-        }>
-        <View className="h-12 w-12 overflow-hidden rounded-md border border-border bg-surface p-2">
-          {coverUrl ? (
-            <Image
-              source={{
-                uri: getAlbumCoverUrl({
-                  bucket: 'album_covers',
-                  artistUuid: item.artist_id!,
-                  albumUrl: item.album_url!,
-                }),
-              }}
-              style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center">
-              <Ionicons name="musical-note" size={18} color={palette.muted} />
-            </View>
-          )}
-        </View>
+      <View className="flex-row items-center gap-3 py-3">
+        {/* tocar música ao clicar na área principal */}
+        <TouchableOpacity
+          className="flex-1 flex-row items-center gap-3 active:opacity-90"
+          onPress={() =>
+            playTrack({
+              id: track.id,
+              title: track.title,
+              artist: track.artists?.name,
+              coverUrl: coverUrl ?? undefined,
+              audioUrl,
+            })
+          }>
+          <View className="h-12 w-12 overflow-hidden rounded-md border border-border bg-surface">
+            {coverUrl ? (
+              <Image
+                source={{
+                  uri: getAlbumCoverUrl({
+                    bucket: 'album_covers',
+                    artistUuid: item.artist_id!,
+                    albumUrl: item.album_url!,
+                  }),
+                }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+            ) : (
+              <View className="flex-1 items-center justify-center">
+                <Ionicons name="musical-note" size={18} color={palette.muted} />
+              </View>
+            )}
+          </View>
 
-        <View className="flex-1">
-          <Text className="text-content" numberOfLines={1}>
-            {track.title}
+          <View className="flex-1">
+            <Text className="text-content" numberOfLines={1}>
+              {track.title}
+            </Text>
+            <Text className="text-xs text-muted" numberOfLines={1}>
+              {track.artists?.name || '—'}
+            </Text>
+          </View>
+
+          <Text className="text-xs text-muted">
+            {formatDuration(track.duration_seconds ?? null)}
           </Text>
-          <Text className="text-xs text-muted" numberOfLines={1}>
-            {track.artists?.name || '—'}
-          </Text>
-        </View>
+        </TouchableOpacity>
 
-        <Text className="text-xs text-muted">{formatDuration(track.duration_seconds ?? null)}</Text>
-
-        {/* Exclusão */}
+        {/* botão de excluir */}
         <TouchableOpacity
           onPress={() => setPendingDelete(item)}
           className="ml-2 p-2 active:opacity-70">
           <Ionicons name="trash-outline" size={18} color={palette.danger} />
         </TouchableOpacity>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -139,14 +148,14 @@ export function PlaylistDetailOverlay({ bottomOffset }: Props) {
         position: 'absolute',
         left: 0,
         right: 0,
-        top: 0, // cobre DESDE o topo
-        bottom: bottomOffset ?? 0, // e para antes da TabBar
+        top: 0,
+        bottom: bottomOffset ?? 0,
         zIndex: 45,
         elevation: 45,
       }}
       className="bg-bg">
       {/* header */}
-      <View className="flex-row items-center justify-between px-4 pb-2 pt-16">
+      <View className="flex-row items-center justify-between px-4 pb-2 pt-10">
         <TouchableOpacity onPress={close} className="rounded-full p-2 active:opacity-80">
           <Ionicons name="chevron-down" size={24} color={palette.content} />
         </TouchableOpacity>
@@ -202,6 +211,7 @@ export function PlaylistDetailOverlay({ bottomOffset }: Props) {
         )}
       </View>
 
+      {/* modal de confirmação de remoção */}
       <Modal
         visible={!!pendingDelete}
         transparent

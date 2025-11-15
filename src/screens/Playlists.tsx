@@ -14,7 +14,7 @@ export default function PlaylistsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const { open: openPlaylist } = useOverlay();
+  const { openPlaylist } = useOverlay();
 
   async function load() {
     try {
