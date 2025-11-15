@@ -34,14 +34,14 @@ export function MiniPlayer({ bottomOffset }: MiniPlayerProps) {
         left: 12,
         right: 12,
         bottom: bottomOffset + 6, // espaço extra
-        zIndex: 40,
+        zIndex: 60,
         elevation: 40,
         borderRadius: 12,
       }}
       // @ts-ignore
-      className="border-border bg-surface mx-3 mb-3 rounded-xl border">
+      className="mx-3 mb-3 rounded-xl border border-border bg-surface">
       <View className="flex-row items-center px-3 py-2">
-        <View className="bg-surface border-border mr-3 h-10 w-10 overflow-hidden rounded-md border">
+        <View className="mr-3 h-10 w-10 overflow-hidden rounded-md border border-border bg-surface">
           {current.coverUrl ? (
             <Image
               source={{ uri: current.coverUrl }}
@@ -59,7 +59,7 @@ export function MiniPlayer({ bottomOffset }: MiniPlayerProps) {
           <Text className="text-content" numberOfLines={1}>
             {current.title}
           </Text>
-          <Text className="text-muted text-xs" numberOfLines={1}>
+          <Text className="text-xs text-muted" numberOfLines={1}>
             {current.artist || '—'}
           </Text>
         </View>
@@ -69,10 +69,10 @@ export function MiniPlayer({ bottomOffset }: MiniPlayerProps) {
         </TouchableOpacity>
       </View>
 
-      <View className="bg-border h-1 w-full overflow-hidden rounded-b-xl">
+      <View className="h-1 w-full overflow-hidden rounded-b-xl bg-border">
         <View
           style={{ width: `${Math.max(0, Math.min(100, progress * 100))}%` }}
-          className="bg-primary h-full"
+          className="h-full bg-primary"
         />
       </View>
     </TouchableOpacity>

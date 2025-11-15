@@ -9,7 +9,7 @@ import { useOverlay } from '@/context/OverlayProvider';
 
 export default function MainTabs() {
   const { closePlayer, isPlayerOpen } = usePlayer();
-  const { close } = useOverlay();
+  const { close: closeAllOverlays } = useOverlay();
 
   const Tab = createBottomTabNavigator();
   return (
@@ -17,7 +17,7 @@ export default function MainTabs() {
       screenListeners={{
         tabPress: () => {
           closePlayer();
-          close();
+          closeAllOverlays();
         },
       }}
       screenOptions={{
