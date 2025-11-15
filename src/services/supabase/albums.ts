@@ -1,5 +1,5 @@
 import { supabase } from '@/services/supabase';
-import { ArtistWithAlbums } from '@/types/database';
+import { ArtistWithAlbums, TrackWithDetails } from '@/types/database';
 import { getAlbumCoverUrl } from '../supabase-storage';
 
 export async function listArtistsWithAlbums(): Promise<ArtistWithAlbums[]> {
@@ -34,4 +34,31 @@ export async function listArtistsWithAlbums(): Promise<ArtistWithAlbums[]> {
       artist_id: row.id,
     })),
   }));
+}
+
+export async function listAlbumTracks(albumId: string): Promise<TrackWithDetails[]> {
+  const { data, error } = await supabase
+    .from('tracks')
+    .select(
+      `
+      id,
+      title,
+      duration_seconds,
+      remote_url,
+      albums (
+        id,
+        title,
+        cover_url
+      ),
+      artists (
+        id,
+        name
+      )
+    `
+    )
+    .eq('album_id', albumId) // ajuste se a coluna tiver outro nome
+    .order('title', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as TrackWithDetails[];
 }

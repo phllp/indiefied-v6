@@ -12,10 +12,12 @@ import { Image } from 'expo-image';
 import palette from '@/styles/colors';
 import { listArtistsWithAlbums } from '@/services/supabase/albums';
 import { AlbumSummary, ArtistWithAlbums } from '@/types/database';
+import { useOverlay } from '@/context/OverlayProvider';
 
 type FeaturedAlbum = {
   album: AlbumSummary;
   artistName: string;
+  coverUrl: string;
 };
 
 export default function HomeScreen() {
@@ -23,6 +25,8 @@ export default function HomeScreen() {
   const [featured, setFeatured] = useState<FeaturedAlbum | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { openAlbum } = useOverlay();
 
   async function load() {
     try {
@@ -47,6 +51,7 @@ export default function HomeScreen() {
       setFeatured({
         album: randAlbum,
         artistName: randArtist.name,
+        coverUrl: randAlbum.cover_url ?? '',
       });
 
       // ---- sorteia 3 artistas aleatórios (com álbum) ----
@@ -66,7 +71,7 @@ export default function HomeScreen() {
     load();
   }, []);
 
-  const renderAlbum = (album: AlbumSummary) => {
+  const renderAlbum = (album: AlbumSummary, artistName: string) => {
     const coverUrl = album.cover_url ?? undefined;
 
     return (
@@ -74,8 +79,12 @@ export default function HomeScreen() {
         key={album.id}
         className="mr-3 w-32 active:opacity-90"
         onPress={() => {
-          // TODO: abrir detalhes do álbum
-          console.log('Abrir álbum', album.id);
+          openAlbum({
+            id: album.id,
+            title: album.title,
+            cover_url: album.cover_url,
+            artist_name: artistName,
+          });
         }}>
         <View className="aspect-square w-full overflow-hidden rounded-xl border border-border bg-surface">
           {coverUrl ? (
@@ -111,7 +120,7 @@ export default function HomeScreen() {
         <FlatList
           data={artist.albums}
           keyExtractor={(alb) => alb.id}
-          renderItem={({ item }) => renderAlbum(item)}
+          renderItem={({ item }) => renderAlbum(item, artist.name)}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 8 }}
@@ -166,7 +175,12 @@ export default function HomeScreen() {
         <TouchableOpacity
           className="mb-8 active:opacity-90"
           onPress={() => {
-            console.log('Abrir álbum em destaque', featured.album.id);
+            openAlbum({
+              id: featured.album.id,
+              title: featured.album.title,
+              cover_url: featured.coverUrl,
+              artist_name: featured.artistName,
+            });
           }}>
           <Text className="mb-2 text-xs uppercase tracking-wide text-muted">Em destaque</Text>
 

@@ -1,10 +1,23 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { Playlist } from '@/types/database';
 
+export type AlbumOverlayData = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  artist_name?: string | null;
+};
+
+type OverlayState =
+  | { kind: 'playlist'; playlist: Playlist }
+  | { kind: 'album'; album: AlbumOverlayData }
+  | null;
+
 type Ctx = {
-  playlist: Playlist | null;
+  state: OverlayState;
   isOpen: boolean;
-  open: (pl: Playlist) => void;
+  openPlaylist: (pl: Playlist) => void;
+  openAlbum: (album: AlbumOverlayData) => void;
   close: () => void;
 };
 
@@ -17,21 +30,23 @@ export function useOverlay() {
 }
 
 export function OverlayProvider({ children }: { children: React.ReactNode }) {
-  // Por hora só é usado para playlist details, então só tem esse estado
-  const [playlist, setPlaylist] = useState<Playlist | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [state, setState] = useState<OverlayState>(null);
+  const isOpen = state !== null;
 
-  const open = useCallback((pl: Playlist) => {
-    setPlaylist(pl);
-    setIsOpen(true);
+  const openPlaylist = useCallback((pl: Playlist) => {
+    setState({ kind: 'playlist', playlist: pl });
+  }, []);
+
+  const openAlbum = useCallback((album: AlbumOverlayData) => {
+    setState({ kind: 'album', album });
   }, []);
 
   const close = useCallback(() => {
-    setIsOpen(false);
+    setState(null);
   }, []);
 
   return (
-    <OverlayContext.Provider value={{ playlist, isOpen, open, close }}>
+    <OverlayContext.Provider value={{ state, isOpen, openPlaylist, openAlbum, close }}>
       {children}
     </OverlayContext.Provider>
   );

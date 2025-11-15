@@ -15,6 +15,7 @@ import { View } from 'react-native';
 import MainTabs from '@/navigation/MainTabs';
 import { PlaylistDetailOverlay } from '@/components/PlaylistDetailOverlay';
 import { OverlayProvider } from '@/context/OverlayProvider';
+import { AlbumTracksOverlay } from '@/components/AlbumTracksOverlay';
 
 const navTheme = {
   ...DefaultTheme,
@@ -46,6 +47,7 @@ function Overlays() {
       }}>
       <FullPlayerOverlay bottomOffset={TAB_BAR_HEIGHT} />
       <PlaylistDetailOverlay bottomOffset={TAB_BAR_HEIGHT} />
+      <AlbumTracksOverlay bottomOffset={TAB_BAR_HEIGHT} />
 
       <MiniPlayer bottomOffset={TAB_BAR_HEIGHT + insets.bottom} />
     </View>
