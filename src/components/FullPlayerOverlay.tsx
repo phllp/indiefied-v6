@@ -23,11 +23,20 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
     seekTo,
     progress,
   } = usePlayer();
+
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [banner, setBanner] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
+  const [barWidth, setBarWidth] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubProgress, setScrubProgress] = useState(0);
+  const [scrubPositionMs, setScrubPositionMs] = useState(0);
+
   if (!isPlayerOpen || !current) return null;
+
+  const effectiveProgress = isScrubbing ? scrubProgress : progress;
+  const effectivePosition = isScrubbing ? scrubPositionMs : positionMillis;
 
   const format = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -35,6 +44,16 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
     const r = s % 60;
     return `${m}:${r.toString().padStart(2, '0')}`;
   };
+
+  function progressFromX(x: number) {
+    if (!durationMillis || barWidth <= 0) {
+      return { p: 0, ms: 0 };
+    }
+    const clampedX = Math.max(0, Math.min(barWidth, x));
+    const p = clampedX / barWidth;
+    const ms = p * durationMillis;
+    return { p, ms };
+  }
 
   async function handleSelectPlaylist(pl: { id: string; name: string }) {
     setSaving(true);
@@ -49,7 +68,6 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
       setBanner({ type: 'err', msg });
     } finally {
       setSaving(false);
-      // esconde banner depois de 2s
       setTimeout(() => setBanner(null), 2000);
     }
   }
@@ -106,15 +124,49 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
         </Text>
       </View>
 
-      {/* progresso */}
+      {/* progresso com seek */}
       <View className="mt-8 px-6">
-        <View className="h-2 w-full overflow-hidden rounded-full border border-border bg-surface">
-          <View style={{ width: `${progress * 100}%` }} className="h-full bg-primary" />
+        <View
+          className="h-2 w-full overflow-hidden rounded-full border border-border bg-surface"
+          onLayout={(e) => {
+            setBarWidth(e.nativeEvent.layout.width);
+          }}
+          // transforma a barra em área de toque/arraste
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderGrant={(e) => {
+            const { p, ms } = progressFromX(e.nativeEvent.locationX);
+            setIsScrubbing(true);
+            setScrubProgress(p);
+            setScrubPositionMs(ms);
+          }}
+          onResponderMove={(e) => {
+            const { p, ms } = progressFromX(e.nativeEvent.locationX);
+            setIsScrubbing(true);
+            setScrubProgress(p);
+            setScrubPositionMs(ms);
+          }}
+          onResponderRelease={async (e) => {
+            const { p, ms } = progressFromX(e.nativeEvent.locationX);
+            setIsScrubbing(false);
+            setScrubProgress(p);
+            setScrubPositionMs(ms);
+            if (durationMillis && durationMillis > 0) {
+              seekTo(ms);
+            }
+          }}
+          onResponderTerminate={() => {
+            // gestos cancelados
+            setIsScrubbing(false);
+          }}>
+          <View style={{ width: `${effectiveProgress * 100}%` }} className="h-full bg-primary" />
         </View>
+
         <View className="mt-2 flex-row justify-between">
-          <Text className="text-sm text-muted">{format(positionMillis)}</Text>
+          <Text className="text-sm text-muted">{format(effectivePosition)}</Text>
           <Text className="text-sm text-muted">{format(durationMillis)}</Text>
         </View>
+
         <View className="mt-3 flex-row justify-between">
           <TouchableOpacity
             onPress={() => seekTo(Math.max(0, positionMillis - 15000))}
@@ -138,7 +190,7 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Banner de feedback (simples, some sozinho) */}
+      {/* Banner de feedback */}
       {banner && (
         <View className="absolute bottom-4 left-4 right-4 items-center">
           <View
