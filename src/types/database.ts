@@ -33,3 +33,11 @@ export type Playlist = {
   cover_url: string | null;
   created_at: string;
 };
+
+export type PlaylistTrackItem = {
+  track_id: string;
+  added_at: string;
+  artist_id: string | null;
+  album_url: string | null;
+  tracks: TrackWithDetails | null;
+};

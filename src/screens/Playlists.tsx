@@ -6,12 +6,15 @@ import PlaylistCard from '@/components/PlaylistCard';
 import { CreatePlaylistOverlay } from '@/components/CreatePlaylistOverlay';
 import { createPlaylist, listPlaylists } from '@/services/supabase/playlists';
 import { Playlist } from '@/types/database';
+import { useOverlay } from '@/context/OverlayProvider';
 
 export default function PlaylistsScreen() {
   const [items, setItems] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  const { open: openPlaylist } = useOverlay();
 
   async function load() {
     try {
@@ -67,7 +70,7 @@ export default function PlaylistsScreen() {
             <PlaylistCard
               item={item}
               onPress={() => {
-                // abrir detalhes da playlist (futuro)
+                openPlaylist(item);
               }}
             />
           )}

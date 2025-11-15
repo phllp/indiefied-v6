@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import * as mime from 'react-native-mime-types';
 import { supabase } from '@/services/supabase';
 import { decode as atob } from 'base-64';
-import { Playlist } from '@/types/database';
+import { Playlist, PlaylistTrackItem, TrackWithDetails } from '@/types/database';
 
 const PLAYLIST_BUCKET = 'playlist_covers';
 const DEFAULT_USER_ID = '5e9df724-5e75-45f2-99a1-6035ce41ab35';
@@ -95,4 +95,100 @@ export async function listPlaylists(userId: string = DEFAULT_USER_ID): Promise<P
 
   if (error) throw error;
   return data ?? [];
+}
+
+type AddTrackToPlaylistOpts = {
+  playlistId: string;
+  trackId: string;
+};
+
+export async function addTrackToPlaylist(opts: AddTrackToPlaylistOpts) {
+  const { playlistId, trackId } = opts;
+
+  // pega próxima posição
+  const { data: maxRow, error: maxErr } = await supabase
+    .from('playlist_items')
+    .select('position')
+    .eq('playlist_id', playlistId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (maxErr) throw maxErr;
+  const nextPos = (maxRow?.position ?? 0) + 1;
+
+  const { error: insErr } = await supabase.from('playlist_items').insert({
+    playlist_id: playlistId,
+    track_id: trackId,
+    position: nextPos,
+  });
+
+  if (insErr) throw insErr;
+}
+
+/**
+ * Lista as músicas de uma playlist,
+ * ordenadas pelas adicionadas mais recentemente.
+ */
+export async function listPlaylistTracks(playlistId: string): Promise<PlaylistTrackItem[]> {
+  const { data, error } = await supabase
+    .from('playlist_items')
+    .select(
+      `
+      track_id,
+      added_at,
+      tracks (
+        id,
+        title,
+        duration_seconds,
+        remote_url,
+        albums (
+          id,
+          title,
+          cover_url
+        ),
+        artists (
+          id,
+          name
+        )
+      )
+    `
+    )
+    .eq('playlist_id', playlistId)
+    .order('added_at', { ascending: false });
+
+  if (error) throw error;
+
+  // dados brutos vindos do Supabase
+  const rows = (data ?? []) as {
+    track_id: string;
+    added_at: string;
+    tracks:
+      | (TrackWithDetails & {
+          artists?: { id: string | null; name: string | null } | null;
+          albums?: { id: string | null; title: string | null; cover_url: string | null } | null;
+        })
+      | null;
+  }[];
+
+  // monta o formato esperado, preenchendo artist_id e album_url
+  return rows.map((row) => ({
+    track_id: row.track_id,
+    added_at: row.added_at,
+    tracks: row.tracks ?? null,
+    artist_id: row.tracks?.artists?.id ?? null,
+    album_url: row.tracks?.albums?.cover_url ?? null,
+  }));
+}
+
+export async function removeTrackFromPlaylist(params: { playlistId: string; trackId: string }) {
+  const { playlistId, trackId } = params;
+
+  const { error } = await supabase
+    .from('playlist_items')
+    .delete()
+    .eq('playlist_id', playlistId)
+    .eq('track_id', trackId);
+
+  if (error) throw error;
 }

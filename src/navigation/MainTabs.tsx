@@ -5,9 +5,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import palette from 'src/styles/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlayer } from '@/context/PlayerProvider';
+import { useOverlay } from '@/context/OverlayProvider';
 
 export default function MainTabs() {
   const { closePlayer, isPlayerOpen } = usePlayer();
+  const { close } = useOverlay();
 
   const Tab = createBottomTabNavigator();
   return (
@@ -15,6 +17,7 @@ export default function MainTabs() {
       screenListeners={{
         tabPress: () => {
           closePlayer();
+          close();
         },
       }}
       screenOptions={{

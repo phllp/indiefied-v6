@@ -1,14 +1,9 @@
 import './global.css';
 
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import palette from 'src/styles/colors';
-import PlaylistsScreen from '@/screens/Playlists';
-import SearchScreen from '@/screens/Search';
-import HomeScreen from '@/screens/Home';
-import { PlayerProvider, usePlayer } from '@/context/PlayerProvider';
+import { PlayerProvider } from '@/context/PlayerProvider';
 import { FullPlayerOverlay } from '@/components/FullPlayerOverlay';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import {
@@ -18,6 +13,8 @@ import {
 } from 'react-native-safe-area-context';
 import { View } from 'react-native';
 import MainTabs from '@/navigation/MainTabs';
+import { PlaylistDetailOverlay } from '@/components/PlaylistDetailOverlay';
+import { OverlayProvider } from '@/context/OverlayProvider';
 
 const navTheme = {
   ...DefaultTheme,
@@ -48,6 +45,8 @@ function Overlays() {
         elevation: 30,
       }}>
       <FullPlayerOverlay bottomOffset={TAB_BAR_HEIGHT} />
+      <PlaylistDetailOverlay bottomOffset={TAB_BAR_HEIGHT} />
+
       <MiniPlayer bottomOffset={TAB_BAR_HEIGHT + insets.bottom} />
     </View>
   );
@@ -57,11 +56,13 @@ export default function App() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <PlayerProvider>
-        <NavigationContainer theme={navTheme}>
-          <MainTabs />
-          <Overlays />
-          <StatusBar style="light" />
-        </NavigationContainer>
+        <OverlayProvider>
+          <NavigationContainer theme={navTheme}>
+            <MainTabs />
+            <Overlays />
+            <StatusBar style="light" />
+          </NavigationContainer>
+        </OverlayProvider>
       </PlayerProvider>
     </SafeAreaProvider>
   );

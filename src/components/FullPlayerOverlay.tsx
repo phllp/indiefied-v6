@@ -3,10 +3,12 @@ import { usePlayer } from '@/context/PlayerProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import palette from '@/styles/colors';
-import { useAlbumCover } from '@/hooks/useAlbumCover';
+import { addTrackToPlaylist } from '@/services/supabase/playlists';
+import { useState } from 'react';
+import SelectPlaylistModal from './SelectPlaylistModal';
 
 interface FullPlayerOverlayProps {
-  bottomOffset: number;
+  bottomOffset?: number;
 }
 
 export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
@@ -21,6 +23,9 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
     seekTo,
     progress,
   } = usePlayer();
+  const [saving, setSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   if (!isPlayerOpen || !current) return null;
 
@@ -31,6 +36,24 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
     return `${m}:${r.toString().padStart(2, '0')}`;
   };
 
+  async function handleSelectPlaylist(pl: { id: string; name: string }) {
+    setSaving(true);
+    try {
+      if (!current) throw new Error('Nenhuma faixa selecionada');
+      await addTrackToPlaylist({ playlistId: pl.id, trackId: current.id });
+      setPickerOpen(false);
+      setBanner({ type: 'ok', msg: `Adicionada em “${pl.name}”` });
+    } catch (e: any) {
+      setPickerOpen(false);
+      const msg = e?.message || 'Falha ao adicionar à playlist';
+      setBanner({ type: 'err', msg });
+    } finally {
+      setSaving(false);
+      // esconde banner depois de 2s
+      setTimeout(() => setBanner(null), 2000);
+    }
+  }
+
   return (
     <View
       style={{
@@ -38,24 +61,29 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
         left: 0,
         right: 0,
         top: 0,
-        bottom: bottomOffset,
+        bottom: bottomOffset ?? 0,
         zIndex: 50,
         elevation: 50,
       }}
       // @ts-ignore
       className="bg-bg">
-      {/* botão fechar */}
-      <View className="mt-10 px-4 pt-4">
-        <TouchableOpacity
-          onPress={closePlayer}
-          className="self-start rounded-full p-2 active:opacity-80">
+      {/* botão fechar && adicionar a playlist */}
+      <View className="mt-10 flex-row items-center justify-between px-4 pt-4">
+        <TouchableOpacity onPress={closePlayer} className="rounded-full p-2 active:opacity-80">
           <Ionicons name="chevron-down" size={24} color={palette.content} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setPickerOpen(true)}
+          className="rounded-full p-2 active:opacity-80"
+          disabled={saving}>
+          <Ionicons name="add-circle-outline" size={24} color={palette.primary} />
         </TouchableOpacity>
       </View>
 
       {/* capa */}
       <View className="mt-2 items-center">
-        <View className="bg-surface border-border aspect-square w-[80%] overflow-hidden rounded-3xl border">
+        <View className="aspect-square w-[80%] overflow-hidden rounded-3xl border border-border bg-surface">
           {current.coverUrl ? (
             <Image
               source={{ uri: current.coverUrl }}
@@ -70,22 +98,22 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
 
       {/* títulos */}
       <View className="mt-6 px-6">
-        <Text className="text-content text-center text-2xl font-bold" numberOfLines={1}>
+        <Text className="text-center text-2xl font-bold text-content" numberOfLines={1}>
           {current.title}
         </Text>
-        <Text className="text-muted text-center text-base" numberOfLines={1}>
+        <Text className="text-center text-base text-muted" numberOfLines={1}>
           {current.artist || '—'}
         </Text>
       </View>
 
       {/* progresso */}
       <View className="mt-8 px-6">
-        <View className="border-border bg-surface h-2 w-full overflow-hidden rounded-full border">
-          <View style={{ width: `${progress * 100}%` }} className="bg-primary h-full" />
+        <View className="h-2 w-full overflow-hidden rounded-full border border-border bg-surface">
+          <View style={{ width: `${progress * 100}%` }} className="h-full bg-primary" />
         </View>
         <View className="mt-2 flex-row justify-between">
-          <Text className="text-muted text-sm">{format(positionMillis)}</Text>
-          <Text className="text-muted text-sm">{format(durationMillis)}</Text>
+          <Text className="text-sm text-muted">{format(positionMillis)}</Text>
+          <Text className="text-sm text-muted">{format(durationMillis)}</Text>
         </View>
         <View className="mt-3 flex-row justify-between">
           <TouchableOpacity
@@ -105,10 +133,31 @@ export function FullPlayerOverlay({ bottomOffset }: FullPlayerOverlayProps) {
       <View className="mt-6 items-center">
         <TouchableOpacity
           onPress={togglePlayPause}
-          className="bg-primary h-16 w-16 items-center justify-center rounded-full active:opacity-90">
+          className="h-16 w-16 items-center justify-center rounded-full bg-primary active:opacity-90">
           <Ionicons name={isPlaying ? 'pause' : 'play'} size={28} color={'#000'} />
         </TouchableOpacity>
       </View>
+
+      {/* Banner de feedback (simples, some sozinho) */}
+      {banner && (
+        <View className="absolute bottom-4 left-4 right-4 items-center">
+          <View
+            className={`rounded-md px-3 py-2 ${banner.type === 'ok' ? 'bg-primary' : 'bg-danger'}`}
+            style={{ opacity: 0.95 }}>
+            <Text
+              className={`${banner.type === 'ok' ? 'text-black' : 'text-content'} font-semibold`}>
+              {banner.msg}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Modal de seleção */}
+      <SelectPlaylistModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleSelectPlaylist}
+      />
     </View>
   );
 }
