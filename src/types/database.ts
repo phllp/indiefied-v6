@@ -41,3 +41,16 @@ export type PlaylistTrackItem = {
   album_url: string | null;
   tracks: TrackWithDetails | null;
 };
+
+export type AlbumSummary = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  artist_id: string;
+};
+
+export type ArtistWithAlbums = {
+  id: string;
+  name: string;
+  albums: AlbumSummary[];
+};
